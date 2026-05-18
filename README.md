@@ -135,12 +135,20 @@ All operations are logged to `C:\Kiosk\kiosk-setup.log` with these levels:
 
 If any `[MANUAL]` entries exist, a red warning is displayed at the end of setup with the log file path.
 
-## V1 Compatibility
+## Version History (V1 vs V2 vs V3)
 
-If you previously used V1 of this script, V2 automatically:
-- Removes old `KioskWatchdog` scheduled task
-- Removes old `watchdog.bat` file
-- Cleans up V1 HKLM policy remnants during undo
+### V3 (Current)
+- **Line Ending Robustness:** Replaced PowerShell here-strings (`@"..."@`) with string arrays (`@(...) -join "`r`n"`). This completely eliminates `TerminatorExpectedAtEndOfString` errors when users download the script via GitHub's "Raw" button (which defaults to Unix LF line endings) or clone on systems with `core.autocrlf=false`.
+
+### V2
+- **Safe Admin Restrictions (HKCU):** Moved all restrictions from `HKLM` to `HKCU`. Now restrictions *only* affect the Kiosk user. Your admin accounts are completely untouched.
+- **Log System:** Added comprehensive logging (`kiosk-setup.log`).
+- **Software Restriction Policies (SRP):** Added process-level blocking with `PolicyScope=1` (Admins exempt).
+- **Internal Watchdog:** Removed the external `watchdog.bat` file. The watchdog is now an internal Task Scheduler loop (repeats every 30 seconds).
+- **Auto-Fixing:** Added self-healing steps if commands fail (e.g. recreating already existing tasks/users).
+
+### V1
+- *Legacy script:* Used `HKLM` (affected all users), had external batch watchdogs, and lacked detailed logging. V2's undo script cleans up V1 remnants automatically.
 
 ## License
 
