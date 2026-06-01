@@ -19,9 +19,9 @@ if %errorLevel% neq 0 (
 :: ─────────────────────────────────────────────
 :: V3 SCRIPT KONTROLU
 :: ─────────────────────────────────────────────
-if not exist "%~dp0Setup-KioskMode V3.ps1" (
+if not exist "%~dp0Setup-KioskMode-V3.ps1" (
     echo.
-    echo  [HATA] Setup-KioskMode V3.ps1 bulunamadi!
+    echo  [HATA] Setup-KioskMode-V3.ps1 bulunamadi!
     echo         Bu dosya, Kiosk-Launcher.bat ile ayni klasorde olmalidir.
     echo         Aranan konum: %~dp0
     echo.
@@ -37,7 +37,7 @@ echo  ====================================================
 echo       KIOSK MODE V3 - KURULUM YARDIMCISI
 echo  ====================================================
 echo.
-echo  Bu yardimci, Setup-KioskMode V3.ps1 scriptini
+echo  Bu yardimci, Setup-KioskMode-V3.ps1 scriptini
 echo  sizin icin dogru parametrelerle baslatir.
 echo.
 
@@ -176,7 +176,7 @@ echo  ====================================================
 echo  [4/4] KURULUM OZETI
 echo  ====================================================
 echo.
-echo   Script    : Setup-KioskMode V3.ps1
+echo   Script    : Setup-KioskMode-V3.ps1
 echo   Uygulama  : !AppPath!
 if not "!AppArgs!"=="" echo   Argumanlar: !AppArgs!
 echo   Kullanici : !KioskUser!
@@ -201,7 +201,7 @@ echo.
 :: ─────────────────────────────────────────────
 :: POWERSHELL KOMUTU OLUSTUR VE CALISTIR
 :: ─────────────────────────────────────────────
-set "PS_CMD=& \"%~dp0Setup-KioskMode V3.ps1\" -AppPath \"!AppPath!\" -KioskUser \"!KioskUser!\""
+set "PS_CMD=& \"%~dp0Setup-KioskMode-V3.ps1\" -AppPath \"!AppPath!\" -KioskUser \"!KioskUser!\""
 
 if not "!AppArgs!"=="" (
     set "PS_CMD=!PS_CMD! -AppArgs \"!AppArgs!\""
