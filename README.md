@@ -38,28 +38,44 @@ Automated PowerShell script to turn any Windows 10/11 PC into a secure single-ap
 
 ## Quick Start
 
-### Setup
+### Option A: Interactive Launcher (Recommended)
+
+Right-click `Kiosk-Launcher.bat` → **Run as Administrator**. The launcher guides you through setup with 5 deployment scenarios:
+
+| Scenario | Description |
+|----------|-------------|
+| **1. Passwordless Auto-Login** | Boots directly into app, no password, full restrictions |
+| **2. Password Auto-Login** | Boots directly into app, password-protected account |
+| **3. Password Manual Login** | Stops at lock screen, requires password to enter kiosk |
+| **4. Passwordless Manual Login** | Stops at lock screen, click kiosk user to enter |
+| **5. Developer / Test Mode** | Auto-login with NO restrictions (for testing) |
+
+### Option B: Direct PowerShell
 
 Open PowerShell **as Administrator** and run:
 
 ```powershell
-& "C:\path\to\Setup-KioskMode.ps1" -AppPath "C:\MyApp\app.exe" -AutoLogon
+& "C:\path\to\Setup-KioskMode-V3.ps1" -AppPath "C:\MyApp\app.exe" -AutoLogon
 ```
 
 ### Examples
 
 ```powershell
 # Basic kiosk (passwordless, auto-logon)
-& ".\Setup-KioskMode.ps1" -AppPath "D:\Kiosk\myapp.exe" -AutoLogon
+& ".\Setup-KioskMode-V3.ps1" -AppPath "D:\Kiosk\myapp.exe" -AutoLogon
 
 # With app arguments
-& ".\Setup-KioskMode.ps1" -AppPath "C:\Kiosk\browser.exe" -AppArgs "--kiosk --fullscreen" -AutoLogon
+& ".\Setup-KioskMode-V3.ps1" -AppPath "C:\Kiosk\browser.exe" -AppArgs "--kiosk --fullscreen" -AutoLogon
 
 # Custom user name and password
-& ".\Setup-KioskMode.ps1" -AppPath "E:\App\pos.exe" -KioskUser "POS" -KioskPassword "1234" -AutoLogon
+& ".\Setup-KioskMode-V3.ps1" -AppPath "E:\App\pos.exe" -KioskUser "POS" -KioskPassword "1234" -AutoLogon
+
+# Multiple kiosks on same machine
+& ".\Setup-KioskMode-V3.ps1" -AppPath "C:\Kiosk\app1.exe" -KioskUser "Kiosk1" -AutoLogon
+& ".\Setup-KioskMode-V3.ps1" -AppPath "C:\Kiosk\app2.exe" -KioskUser "Kiosk2" -AutoLogon
 
 # Skip restrictions (for testing)
-& ".\Setup-KioskMode.ps1" -AppPath "C:\Kiosk\app.exe" -SkipRestrictions -AutoLogon
+& ".\Setup-KioskMode-V3.ps1" -AppPath "C:\Kiosk\app.exe" -SkipRestrictions -AutoLogon
 ```
 
 ### Undo
@@ -112,7 +128,17 @@ Boot → AutoLogon → Kiosk user session
 - Checks Task Scheduler service status and auto-starts if stopped
 - Validates AppPath is a full/absolute path
 
-## Files Created
+## Repository Files
+
+| File | Description |
+|------|-------------|
+| `Setup-KioskMode-V3.ps1` | **Current** — LF-safe kiosk setup script |
+| `Kiosk-Launcher.bat` | Interactive launcher for V3 (5 scenarios, input validation) |
+| `Setup-KioskMode-V2.ps1` | Previous version (here-string based, requires CRLF) |
+| `Setup-KioskMode.ps1` | V1 — Legacy (HKLM-based, affects all users) |
+| `.gitattributes` | Enforces CRLF line endings for .ps1/.bat files |
+
+## Files Created During Setup
 
 | File | Purpose |
 |------|---------|
@@ -137,17 +163,18 @@ If any `[MANUAL]` entries exist, a red warning is displayed at the end of setup 
 
 ## Version History (V1 vs V2 vs V3)
 
-### V3 (Current)
+### V3 (Current — `Setup-KioskMode-V3.ps1`)
 - **Line Ending Robustness:** Replaced PowerShell here-strings (`@"..."@`) with string arrays (`@(...) -join "`r`n"`). This completely eliminates `TerminatorExpectedAtEndOfString` errors when users download the script via GitHub's "Raw" button (which defaults to Unix LF line endings) or clone on systems with `core.autocrlf=false`.
+- **Interactive Launcher:** Added `Kiosk-Launcher.bat` — a guided batch launcher with 5 deployment scenarios, input validation (full path check, username space check, V3.ps1 existence check), and proper PowerShell parameter passing.
 
-### V2
+### V2 (`Setup-KioskMode-V2.ps1`)
 - **Safe Admin Restrictions (HKCU):** Moved all restrictions from `HKLM` to `HKCU`. Now restrictions *only* affect the Kiosk user. Your admin accounts are completely untouched.
 - **Log System:** Added comprehensive logging (`kiosk-setup.log`).
 - **Software Restriction Policies (SRP):** Added process-level blocking with `PolicyScope=1` (Admins exempt).
 - **Internal Watchdog:** Removed the external `watchdog.bat` file. The watchdog is now an internal Task Scheduler loop (repeats every 30 seconds).
 - **Auto-Fixing:** Added self-healing steps if commands fail (e.g. recreating already existing tasks/users).
 
-### V1
+### V1 (`Setup-KioskMode.ps1`)
 - *Legacy script:* Used `HKLM` (affected all users), had external batch watchdogs, and lacked detailed logging. V2's undo script cleans up V1 remnants automatically.
 
 ## License
