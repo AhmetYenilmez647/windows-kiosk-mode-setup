@@ -20,24 +20,43 @@ rem ====================================================
 rem BASLIK
 rem ====================================================
 echo.
-echo  ====================================================
-echo       KIOSK MODE DETAYLI KURULUM YARDIMCISI
-echo  ====================================================
+echo  ======================================================================
+echo                 KIOSK MODE DETAYLI KURULUM YARDIMCISI
+echo  ======================================================================
 echo.
-echo  Bu yardimci, seciceginiz Setup-KioskMode betigini
-echo  sizin icin dogru parametrelerle baslatir.
+echo  Bu yardimci, sectiginiz Setup-KioskMode betigini (.ps1)
+echo  sizin icin dogru parametrelerle otomatik olarak baslatir.
 echo.
 
 rem ====================================================
 rem [0/4] SURUM SECIMI
 rem ====================================================
-echo  ----------------------------------------------------
+echo  ----------------------------------------------------------------------
 echo  [0/4] SCRIPT SURUMU SECIN
-echo  ----------------------------------------------------
+echo  ----------------------------------------------------------------------
 echo.
-echo  [1] V1 - Setup-KioskMode.ps1 (Eski, HKLM bazli, tum kullanicilari etkiler)
-echo  [2] V2 - Setup-KioskMode-V2.ps1 (Gelistirilmis kovan baglama, HKCU bazli)
-echo  [3] V3 - Setup-KioskMode-V3.ps1 (En yeni, Custom Shell + explorer.exe kilidi)
+echo  [1] V1 - Setup-KioskMode.ps1 (Eski / Onerilmez)
+echo      * KISITLAMALARI SISTEM GENELI (HKLM) UYGULAR.
+echo      * Admin hesabinizi da kilitler! Geri almak zor olabilir.
+echo      * Sadece Windows Home olmayan (Pro/Ent), gpedit.msc iceren cok
+echo        eski sistemlerde son care olarak tercih edilmelidir.
+echo.
+echo  [2] V2 - Setup-KioskMode-V2.ps1 (Kullaniciya Ozel / Guvenli)
+echo      * Kisitlamalari sadece Kiosk kullanicisina (HKCU) uygular.
+echo      * Admin/Yonetici hesabi kısıtlamalardan ETKILENMEZ.
+echo      * Windows Masaustu (explorer.exe) yuklenir ancak CMD, Regedit,
+echo        Gorev Yonetici gibi kritik sistem araclari engellenir.
+echo.
+echo  [3] V3 - Setup-KioskMode-V3.ps1 (En Yeni / EN GUVENLI VE ONERILEN)
+echo      * Kisitlamalari sadece Kiosk kullanicisina (HKCU) uygular.
+echo      * Masaustu (explorer.exe) tamamen devre disi birakilir.
+echo      * Bilgisayar acildiginda kullanici masaustunu veya baslat menusunu
+echo        goremez, doğrudan siyah bir ekran uzerinde uygulamaniz calisir.
+echo.
+echo  ----------------------------------------------------------------------
+echo  CRITICAL: Sectiginiz script dosyasinin (.ps1) bu baslaticiyla (.bat)
+echo            ayni klasorde bulundugundan emin olun!
+echo  ----------------------------------------------------------------------
 echo.
 set "VerChoice="
 set /p "VerChoice=  Seciminiz (1-3) [bos=3]: "
@@ -66,7 +85,8 @@ rem Script kontrolu
 if not exist "%~dp0!SCRIPT_FILE!" (
     echo.
     echo  [HATA] !SCRIPT_FILE! bulunamadi!
-    echo         Bu dosya, Kiosk-Launcher.bat ile ayni klasorde olmalidir.
+    echo         Dosyanin indirildiginden ve bu baslaticiyla ayni klasorde
+    echo         oldugundan emin olun.
     echo         Aranan konum: %~dp0!SCRIPT_FILE!
     echo.
     pause
@@ -80,9 +100,9 @@ echo.
 rem ====================================================
 rem [1/4] UYGULAMA BILGILERI
 rem ====================================================
-echo  ----------------------------------------------------
+echo  ----------------------------------------------------------------------
 echo  [1/4] UYGULAMA BILGILERI
-echo  ----------------------------------------------------
+echo  ----------------------------------------------------------------------
 echo.
 set /p "AppPath=  Uygulamanin TAM YOLUNU girin (ornek: C:\Kiosk\app.exe): "
 
@@ -103,15 +123,26 @@ if !errorLevel! neq 0 (
 )
 
 echo.
-set /p "AppArgs=  Uygulama argumanlari (ornek: --fullscreen) [bos birakilabilir]: "
+echo  Uygulama baslatilirken gonderilecek argumanlari yazabilirsiniz.
+echo  ----------------------------------------------------------------------
+echo  Yaygin kullanilan parametre ornekleri:
+echo   * Edge / Google Chrome web kiosk modu icin:
+echo     --kiosk --fullscreen --disable-pinch-gesture --no-first-run
+echo   * Genel uygulamalarda tam ekran modunu zorlamak icin:
+echo     -fullscreen  veya  --fullscreen
+echo   * Klasik Internet Explorer tarayicisi icin:
+echo     -k
+echo  ----------------------------------------------------------------------
+set "AppArgs="
+set /p "AppArgs=  Argumanlari girin [bos birakilabilir]: "
 echo.
 
 rem ====================================================
 rem [2/4] KIOSK KULLANICI ADI
 rem ====================================================
-echo  ----------------------------------------------------
+echo  ----------------------------------------------------------------------
 echo  [2/4] KIOSK KULLANICI ADI
-echo  ----------------------------------------------------
+echo  ----------------------------------------------------------------------
 echo.
 echo  Birden fazla kiosk kurulumu yapacaksaniz farkli isimler
 echo  kullanabilirsiniz (ornek: Kiosk1, Kiosk2, POS, Muhasebe).
@@ -132,31 +163,35 @@ echo.
 rem ====================================================
 rem [3/4] SENARYO SECIMI
 rem ====================================================
-echo  ----------------------------------------------------
+echo  ----------------------------------------------------------------------
 echo  [3/4] KURULUM SENARYOSU SECIN
-echo  ----------------------------------------------------
+echo  ----------------------------------------------------------------------
 echo.
 echo  [1] Sifresiz Otomatik Giris (Onerilen)
-echo      Bilgisayar acilinca direkt uygulamaya girer.
-echo      Sifre sorulmaz, tam kisitlama uygulanir.
+echo      Bilgisayar acilinca direkt kiosk kullanicisi oturum acar.
+echo      Sifre sorulmaz, tam kisitlama uygulanir, sistem doğrudan kilitlenir.
 echo.
 echo  [2] Sifreli Otomatik Giris
-echo      Bilgisayar acilinca direkt uygulamaya girer.
-echo      Kiosk hesabi sifre korunmalidir.
+echo      Bilgisayar acilinca direkt kiosk oturumu acilir ve uygulamaya girer.
+echo      Fakat kiosk hesabi bir sifreyle korunur (sifre registry dosyasinda
+echo      saklanir, guvenlik riskini degerlendirin).
 echo.
 echo  [3] Sifreli Manuel Giris
-echo      Windows kilit ekraninda durur, sifre girilmesi gerekir.
-echo      Yetkisiz fiziksel erisimi engeller.
+echo      Windows kilit ekraninda durur. Kiosk oturumunun acilmasi icin
+echo      belirlediginiz sifrenin girilmesi gerekir. Yetkisiz fiziksel
+echo      erisimleri engellemede etkilidir.
 echo.
 echo  [4] Sifresiz Manuel Giris
-echo      Windows kilit ekraninda durur ama sifre gerekmez.
-echo      Kiosk kullanicisini secmek yeterlidir.
+echo      Windows kilit ekraninda durur ancak sifre sormaz. Listeden kiosk
+echo      kullanicisina tiklamak oturum acilmasi ve uygulamanin baslamasi icin
+echo      yeterlidir.
 echo.
 echo  [5] Gelistirici / Test Modu
-echo      Otomatik giris yapar ama kisitlama UYGULAMAZ.
-echo      Gorev Yoneticisi, CMD, PowerShell acik kalir.
+echo      Otomatik giris yapar ancak sistem/kullanici kisitlamalarini UYGULAMAZ.
+echo      Gorev Yonetici, CMD, PowerShell acik kalir. Uygulamanin kiosk
+echo      ortamindaki davranisini rahatca kontrol etmek icin idealdir.
 echo.
-echo  ----------------------------------------------------
+echo  ----------------------------------------------------------------------
 set "Scenario="
 set /p "Scenario=  Seciminiz (1-5): "
 
@@ -190,7 +225,7 @@ if "!Scenario!"=="1" (
 )
 
 echo.
-echo  [OK] Secilen: !ScenarioName!
+echo  [OK] Secilen Senaryo: !ScenarioName!
 
 rem Sifre sor (sadece gerekiyorsa)
 set "KioskPwd="
@@ -208,17 +243,18 @@ rem ====================================================
 rem [4/4] OZET VE ONAY
 rem ====================================================
 echo.
-echo  ====================================================
+echo  ================================================================------
 echo  [4/4] KURULUM OZETI
-echo  ====================================================
+echo  ================================================================------
 echo.
-echo   Script    : !SCRIPT_FILE! (!VER_NAME!)
-echo   Uygulama  : !AppPath!
-if not "!AppArgs!"=="" echo   Argumanlar: !AppArgs!
-echo   Kullanici : !KioskUser!
-echo   Senaryo   : !ScenarioName!
+echo   Script Dosyasi: !SCRIPT_FILE!
+echo   Surum Bilgisi : !VER_NAME!
+echo   Uygulama Yolu : !AppPath!
+if not "!AppArgs!"=="" echo   Argumanlar    : !AppArgs!
+echo   Kullanici Adi : !KioskUser!
+echo   Senaryo       : !ScenarioName!
 echo.
-echo  ====================================================
+echo  ================================================================------
 echo.
 set /p "Confirm=  Kurulumu baslatmak istiyor musunuz? (E/H): "
 
@@ -231,7 +267,7 @@ if /i not "!Confirm!"=="E" (
 
 echo.
 echo  Kurulum baslatiliyor...
-echo  ====================================================
+echo  ================================================================------
 echo.
 
 rem ====================================================
@@ -263,8 +299,8 @@ if "!USE_SKIP!"=="1" (
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "!PS_CMD!"
 
 echo.
-echo  ====================================================
+echo  ================================================================------
 echo  Script tamamlandi. Detaylar icin yukariyi inceleyin.
-echo  ====================================================
+echo  ================================================================------
 echo.
 pause
