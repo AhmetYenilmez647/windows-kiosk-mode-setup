@@ -1,24 +1,24 @@
 @echo off
 setlocal EnableDelayedExpansion
-chcp 65001 >nul 2>&1
 title Kiosk Mode V3 - Kurulum Yardimcisi
 
-:: ─────────────────────────────────────────────
-:: YONETICI KONTROLU
-:: ─────────────────────────────────────────────
+rem ====================================================
+rem YONETICI KONTROLU VE KENDINI YUKSELTME
+rem ====================================================
 net session >nul 2>&1
 if %errorLevel% neq 0 (
     echo.
-    echo  [HATA] Bu dosya Yonetici haklariyla calistirilmalidir!
-    echo         Sag tiklayin ^> "Yonetici olarak calistir" secin.
+    echo  ====================================================
+    echo  Yonetime Erisimi Gerekiyor... Lutfen Onaylayin
+    echo  ====================================================
     echo.
-    pause
-    exit /b 1
+    powershell.exe -Command "Start-Process '%~f0' -Verb RunAs"
+    exit /b 0
 )
 
-:: ─────────────────────────────────────────────
-:: V3 SCRIPT KONTROLU
-:: ─────────────────────────────────────────────
+rem ====================================================
+rem V3 SCRIPT KONTROLU
+rem ====================================================
 if not exist "%~dp0Setup-KioskMode-V3.ps1" (
     echo.
     echo  [HATA] Setup-KioskMode-V3.ps1 bulunamadi!
@@ -29,9 +29,9 @@ if not exist "%~dp0Setup-KioskMode-V3.ps1" (
     exit /b 1
 )
 
-:: ─────────────────────────────────────────────
-:: BASLIK
-:: ─────────────────────────────────────────────
+rem ====================================================
+rem BASLIK
+rem ====================================================
 echo.
 echo  ====================================================
 echo       KIOSK MODE V3 - KURULUM YARDIMCISI
@@ -41,9 +41,9 @@ echo  Bu yardimci, Setup-KioskMode-V3.ps1 scriptini
 echo  sizin icin dogru parametrelerle baslatir.
 echo.
 
-:: ─────────────────────────────────────────────
-:: [1/4] UYGULAMA BILGILERI
-:: ─────────────────────────────────────────────
+rem ====================================================
+rem [1/4] UYGULAMA BILGILERI
+rem ====================================================
 echo  ----------------------------------------------------
 echo  [1/4] UYGULAMA BILGILERI
 echo  ----------------------------------------------------
@@ -70,9 +70,9 @@ echo.
 set /p "AppArgs=  Uygulama argumanlari (ornek: --fullscreen) [bos birakilabilir]: "
 echo.
 
-:: ─────────────────────────────────────────────
-:: [2/4] KIOSK KULLANICI ADI
-:: ─────────────────────────────────────────────
+rem ====================================================
+rem [2/4] KIOSK KULLANICI ADI
+rem ====================================================
 echo  ----------------------------------------------------
 echo  [2/4] KIOSK KULLANICI ADI
 echo  ----------------------------------------------------
@@ -93,9 +93,9 @@ if !errorLevel! equ 0 (
 )
 echo.
 
-:: ─────────────────────────────────────────────
-:: [3/4] SENARYO SECIMI
-:: ─────────────────────────────────────────────
+rem ====================================================
+rem [3/4] SENARYO SECIMI
+rem ====================================================
 echo  ----------------------------------------------------
 echo  [3/4] KURULUM SENARYOSU SECIN
 echo  ----------------------------------------------------
@@ -156,7 +156,7 @@ if "!Scenario!"=="1" (
 echo.
 echo  [OK] Secilen: !ScenarioName!
 
-:: Sifre sor (sadece gerekiyorsa)
+rem Sifre sor (sadece gerekiyorsa)
 set "KioskPwd="
 if "!USE_PASSWORD!"=="1" (
     echo.
@@ -168,9 +168,9 @@ if "!USE_PASSWORD!"=="1" (
     )
 )
 
-:: ─────────────────────────────────────────────
-:: [4/4] OZET VE ONAY
-:: ─────────────────────────────────────────────
+rem ====================================================
+rem [4/4] OZET VE ONAY
+rem ====================================================
 echo.
 echo  ====================================================
 echo  [4/4] KURULUM OZETI
@@ -198,9 +198,9 @@ echo  Kurulum baslatiliyor...
 echo  ====================================================
 echo.
 
-:: ─────────────────────────────────────────────
-:: POWERSHELL KOMUTU OLUSTUR VE CALISTIR
-:: ─────────────────────────────────────────────
+rem ====================================================
+rem POWERSHELL KOMUTU OLUSTUR VE CALISTIR
+rem ====================================================
 set "PS_CMD=& \"%~dp0Setup-KioskMode-V3.ps1\" -AppPath \"!AppPath!\" -KioskUser \"!KioskUser!\""
 
 if not "!AppArgs!"=="" (
