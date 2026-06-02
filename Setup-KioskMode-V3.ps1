@@ -163,6 +163,12 @@ function Apply-HKCURestrictions {
     $notifPolicy    = "$HiveBase\Software\Policies\Microsoft\Windows\Explorer"
     $disallowPath   = "$explorerPolicy\DisallowRun"
 
+    # Kiosk kullanicisina Ozel Kabuk tanimla (Custom User Shell) -- explorer.exe devre disi kalir
+    $winlogonPath = "$HiveBase\Software\Microsoft\Windows NT\CurrentVersion\Winlogon"
+    Ensure-RegistryPath $winlogonPath
+    Set-ItemProperty -Path $winlogonPath -Name "Shell" -Value "cmd.exe /c exit" -Type String -Force
+    Write-OK "Custom User Shell (HKCU) atandi: cmd.exe /c exit"
+
     # Gorev Yoneticisini devre disi birak
     Ensure-RegistryPath $systemPolicy
     Set-ItemProperty -Path $systemPolicy -Name "DisableTaskMgr" -Value 1 -Type DWord -Force
@@ -216,6 +222,11 @@ function Apply-HKCURestrictions {
 # ---------------------------------------------
 # ON KONTROLLER
 # ---------------------------------------------
+
+# Parametre temizleme (Girislerdeki olasi bosluklari, cift ve tek tirnaklari temizler)
+$AppPath = $AppPath.Trim().Trim('"').Trim("'")
+$AppArgs = $AppArgs.Trim().Trim('"').Trim("'")
+$KioskUser = $KioskUser.Trim().Trim('"').Trim("'")
 
 Write-Host ""
 Write-Host "==============================================" -ForegroundColor Magenta
@@ -385,7 +396,7 @@ Invoke-WithAutoFix -StepName "KioskApp gorevi olusturma" -Action {
         -Principal $appPrincipal `
         -Force | Out-Null
 
-    Write-OK "Gorev olusturuldu: KioskApp (AtLogOn + 30s tekrar watchdog)"
+    Write-OK "Gorev olusturuldu: KioskApp (AtLogOn + 1-dakika tekrar watchdog)"
 } -AutoFixes @{
     "already exists|access|denied|erisim" = {
         Unregister-ScheduledTask -TaskName "KioskApp" -Confirm:$false -ErrorAction SilentlyContinue
@@ -402,6 +413,51 @@ Invoke-WithAutoFix -StepName "KioskApp gorevi olusturma" -Action {
         $appPrincipal = New-ScheduledTaskPrincipal -UserId $KioskUser -LogonType Interactive -RunLevel Limited
         Register-ScheduledTask -TaskName "KioskApp" -Action $appAction -Trigger $appTrigger `
             -Settings $appSettings -Principal $appPrincipal -Force | Out-Null
+    }
+}
+
+# KioskShellKiller Gorevi (Masaustunu / explorer.exe'yi surekli sonlandirir)
+Invoke-WithAutoFix -StepName "KioskShellKiller gorevi olusturma" -Action {
+    $skAction  = New-ScheduledTaskAction -Execute "taskkill.exe" -Argument "/F /IM explorer.exe"
+    $skTrigger = New-ScheduledTaskTrigger -AtLogOn -User $KioskUser
+
+    $tempTrigger = New-ScheduledTaskTrigger -Once -At "00:00" `
+        -RepetitionInterval (New-TimeSpan -Minutes 1) `
+        -RepetitionDuration (New-TimeSpan -Days 9999)
+    $skTrigger.Repetition = $tempTrigger.Repetition
+
+    $skSettings = New-ScheduledTaskSettingsSet `
+        -MultipleInstances IgnoreNew `
+        -RestartCount 3 `
+        -RestartInterval (New-TimeSpan -Minutes 1) `
+        -ExecutionTimeLimit ([System.TimeSpan]::Zero)
+    $skPrincipal = New-ScheduledTaskPrincipal -UserId $KioskUser -LogonType Interactive -RunLevel Limited
+
+    Register-ScheduledTask `
+        -TaskName "KioskShellKiller" `
+        -Action $skAction `
+        -Trigger $skTrigger `
+        -Settings $skSettings `
+        -Principal $skPrincipal `
+        -Force | Out-Null
+
+    Write-OK "Gorev olusturuldu: KioskShellKiller (AtLogOn + 1-dakika tekrar)"
+} -AutoFixes @{
+    "already exists|access|denied|erisim" = {
+        Unregister-ScheduledTask -TaskName "KioskShellKiller" -Confirm:$false -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 1
+        $skAction  = New-ScheduledTaskAction -Execute "taskkill.exe" -Argument "/F /IM explorer.exe"
+        $skTrigger = New-ScheduledTaskTrigger -AtLogOn -User $KioskUser
+        $tempTrigger = New-ScheduledTaskTrigger -Once -At "00:00" `
+            -RepetitionInterval (New-TimeSpan -Minutes 1) `
+            -RepetitionDuration (New-TimeSpan -Days 9999)
+        $skTrigger.Repetition = $tempTrigger.Repetition
+        $skSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
+            -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) `
+            -ExecutionTimeLimit ([System.TimeSpan]::Zero)
+        $skPrincipal = New-ScheduledTaskPrincipal -UserId $KioskUser -LogonType Interactive -RunLevel Limited
+        Register-ScheduledTask -TaskName "KioskShellKiller" -Action $skAction -Trigger $skTrigger `
+            -Settings $skSettings -Principal $skPrincipal -Force | Out-Null
     }
 }
 
@@ -510,6 +566,11 @@ if (-not $SkipRestrictions) {
     "`$cmdPolicy      = `"`$hkuBase\Software\Policies\Microsoft\Windows\System`"",
     "`$notifPolicy    = `"`$hkuBase\Software\Policies\Microsoft\Windows\Explorer`"",
     "`$disallowPath   = `"`$explorerPolicy\DisallowRun`"",
+    "",
+    "# Kiosk kullanicisina Ozel Kabuk tanimla (explorer.exe devre disi kalir)",
+    "`$winlogonPath = `"`$hkuBase\Software\Microsoft\Windows NT\CurrentVersion\Winlogon`"",
+    "New-Item -Path `$winlogonPath -Force | Out-Null",
+    "Set-ItemProperty -Path `$winlogonPath -Name `"Shell`" -Value `"cmd.exe /c exit`" -Type String -Force",
     "",
     "New-Item -Path `$systemPolicy -Force | Out-Null",
     "Set-ItemProperty -Path `$systemPolicy -Name `"DisableTaskMgr`" -Value 1 -Type DWord -Force",
@@ -709,6 +770,7 @@ $undoContent = @(
     "",
     "# --- Gorev Zamanlayici gorevlerini sil ---",
     "Unregister-ScheduledTask -TaskName `"KioskApp`"         -Confirm:`$false -ErrorAction SilentlyContinue",
+    "Unregister-ScheduledTask -TaskName `"KioskShellKiller`" -Confirm:`$false -ErrorAction SilentlyContinue",
     "Unregister-ScheduledTask -TaskName `"KioskWatchdog`"    -Confirm:`$false -ErrorAction SilentlyContinue",
     "Unregister-ScheduledTask -TaskName `"KioskFirstLogon`"  -Confirm:`$false -ErrorAction SilentlyContinue",
     "Write-Host `"[OK] Gorev Zamanlayici gorevleri silindi`" -ForegroundColor Green",
@@ -796,6 +858,10 @@ $undoContent = @(
     "    # WerFault (DontShowUI) temizle",
     "    `$werPath = `"`$hkuBase\Software\Microsoft\Windows\Windows Error Reporting`"",
     "    Remove-ItemProperty -Path `$werPath -Name `"DontShowUI`" -ErrorAction SilentlyContinue",
+    "",
+    "    # Custom User Shell temizle (explorer.exe geri donsun)",
+    "    `$winlogonPath = `"`$hkuBase\Software\Microsoft\Windows NT\CurrentVersion\Winlogon`"",
+    "    Remove-ItemProperty -Path `$winlogonPath -Name `"Shell`" -ErrorAction SilentlyContinue",
     "",
     "    # StuckRects3 gorev cubugunu gorunur yap (#9)",
     "    `$stuckRectsPath = `"`$hkuBase\Software\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3`"",

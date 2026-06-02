@@ -83,7 +83,7 @@ echo.
 set /p "KioskUser=  Kullanici adi [bos=Kiosk]: "
 if "!KioskUser!"=="" set "KioskUser=Kiosk"
 
-echo !KioskUser! | findstr /C:" " >nul 2>&1
+echo !KioskUser!| findstr /C:" " >nul 2>&1
 if !errorLevel! equ 0 (
     echo.
     echo  [HATA] Kullanici adi bosluk iceremez!
