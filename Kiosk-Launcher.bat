@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Kiosk Mode V3 - Kurulum Yardimcisi
+title Kiosk Mode Setup - Kurulum Yardimcisi
 
 rem ====================================================
 rem YONETICI KONTROLU VE KENDINI YUKSELTME
@@ -17,28 +17,64 @@ if %errorLevel% neq 0 (
 )
 
 rem ====================================================
-rem V3 SCRIPT KONTROLU
+rem BASLIK
 rem ====================================================
-if not exist "%~dp0Setup-KioskMode-V3.ps1" (
+echo.
+echo  ====================================================
+echo       KIOSK MODE DETAYLI KURULUM YARDIMCISI
+echo  ====================================================
+echo.
+echo  Bu yardimci, seciceginiz Setup-KioskMode betigini
+echo  sizin icin dogru parametrelerle baslatir.
+echo.
+
+rem ====================================================
+rem [0/4] SURUM SECIMI
+rem ====================================================
+echo  ----------------------------------------------------
+echo  [0/4] SCRIPT SURUMU SECIN
+echo  ----------------------------------------------------
+echo.
+echo  [1] V1 - Setup-KioskMode.ps1 (Eski, HKLM bazli, tum kullanicilari etkiler)
+echo  [2] V2 - Setup-KioskMode-V2.ps1 (Gelistirilmis kovan baglama, HKCU bazli)
+echo  [3] V3 - Setup-KioskMode-V3.ps1 (En yeni, Custom Shell + explorer.exe kilidi)
+echo.
+set "VerChoice="
+set /p "VerChoice=  Seciminiz (1-3) [bos=3]: "
+if "!VerChoice!"=="" set "VerChoice=3"
+
+set "SCRIPT_FILE="
+set "VER_NAME="
+if "!VerChoice!"=="1" (
+    set "SCRIPT_FILE=Setup-KioskMode.ps1"
+    set "VER_NAME=V1 (Setup-KioskMode.ps1)"
+) else if "!VerChoice!"=="2" (
+    set "SCRIPT_FILE=Setup-KioskMode-V2.ps1"
+    set "VER_NAME=V2 (Setup-KioskMode-V2.ps1)"
+) else if "!VerChoice!"=="3" (
+    set "SCRIPT_FILE=Setup-KioskMode-V3.ps1"
+    set "VER_NAME=V3 (Setup-KioskMode-V3.ps1)"
+) else (
     echo.
-    echo  [HATA] Setup-KioskMode-V3.ps1 bulunamadi!
+    echo  [HATA] Gecersiz secim: !VerChoice!
+    echo         Lutfen 1, 2 veya 3 girin.
+    pause
+    exit /b 1
+)
+
+rem Script kontrolu
+if not exist "%~dp0!SCRIPT_FILE!" (
+    echo.
+    echo  [HATA] !SCRIPT_FILE! bulunamadi!
     echo         Bu dosya, Kiosk-Launcher.bat ile ayni klasorde olmalidir.
-    echo         Aranan konum: %~dp0
+    echo         Aranan konum: %~dp0!SCRIPT_FILE!
     echo.
     pause
     exit /b 1
 )
 
-rem ====================================================
-rem BASLIK
-rem ====================================================
 echo.
-echo  ====================================================
-echo       KIOSK MODE V3 - KURULUM YARDIMCISI
-echo  ====================================================
-echo.
-echo  Bu yardimci, Setup-KioskMode-V3.ps1 scriptini
-echo  sizin icin dogru parametrelerle baslatir.
+echo  [OK] Secilen Surum: !VER_NAME!
 echo.
 
 rem ====================================================
@@ -57,7 +93,7 @@ if "!AppPath!"=="" (
     exit /b 1
 )
 
-echo !AppPath! | findstr /C:":" >nul 2>&1
+echo !AppPath!| findstr /C:":" >nul 2>&1
 if !errorLevel! neq 0 (
     echo.
     echo  [HATA] Tam yol girmelisiniz! Ornek: C:\Kiosk\app.exe
@@ -176,7 +212,7 @@ echo  ====================================================
 echo  [4/4] KURULUM OZETI
 echo  ====================================================
 echo.
-echo   Script    : Setup-KioskMode-V3.ps1
+echo   Script    : !SCRIPT_FILE! (!VER_NAME!)
 echo   Uygulama  : !AppPath!
 if not "!AppArgs!"=="" echo   Argumanlar: !AppArgs!
 echo   Kullanici : !KioskUser!
@@ -201,7 +237,7 @@ echo.
 rem ====================================================
 rem POWERSHELL KOMUTU OLUSTUR VE CALISTIR
 rem ====================================================
-set "PS_CMD=& \"%~dp0Setup-KioskMode-V3.ps1\" -AppPath \"!AppPath!\" -KioskUser \"!KioskUser!\""
+set "PS_CMD=& \"%~dp0!SCRIPT_FILE!\" -AppPath \"!AppPath!\" -KioskUser \"!KioskUser!\""
 
 if not "!AppArgs!"=="" (
     set "PS_CMD=!PS_CMD! -AppArgs \"!AppArgs!\""
@@ -215,8 +251,13 @@ if "!USE_AUTOLOGON!"=="1" (
     set "PS_CMD=!PS_CMD! -AutoLogon"
 )
 
+rem V1 scripti -SkipGroupPolicy kullanir, V2/V3 -SkipRestrictions kullanir
 if "!USE_SKIP!"=="1" (
-    set "PS_CMD=!PS_CMD! -SkipRestrictions"
+    if "!VerChoice!"=="1" (
+        set "PS_CMD=!PS_CMD! -SkipGroupPolicy"
+    ) else (
+        set "PS_CMD=!PS_CMD! -SkipRestrictions"
+    )
 )
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "!PS_CMD!"
