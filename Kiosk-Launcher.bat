@@ -35,27 +35,27 @@ echo  ----------------------------------------------------------------------
 echo  [0/4] SCRIPT SURUMU SECIN
 echo  ----------------------------------------------------------------------
 echo.
+echo  DIKKAT: Sectiginiz script dosyasinin indirildiginden ve bu baslaticiyla
+echo          (.bat) kesinlikle AYNIKLASORDE bulundugundan emin olun!
+echo.
 echo  [1] V1 - Setup-KioskMode.ps1 (Eski / Onerilmez)
 echo      * KISITLAMALARI SISTEM GENELI (HKLM) UYGULAR.
-echo      * Admin hesabinizi da kilitler! Geri almak zor olabilir.
+echo      * Admin hesabinizi da kilitler! Geri almak zor ve zahmetlidir.
 echo      * Sadece Windows Home olmayan (Pro/Ent), gpedit.msc iceren cok
 echo        eski sistemlerde son care olarak tercih edilmelidir.
 echo.
 echo  [2] V2 - Setup-KioskMode-V2.ps1 (Kullaniciya Ozel / Guvenli)
 echo      * Kisitlamalari sadece Kiosk kullanicisina (HKCU) uygular.
 echo      * Admin/Yonetici hesabi kısıtlamalardan ETKILENMEZ.
-echo      * Windows Masaustu (explorer.exe) yuklenir ancak CMD, Regedit,
-echo        Gorev Yonetici gibi kritik sistem araclari engellenir.
+echo      * Windows Masaustu (explorer.exe) gorev zamanlayici (KioskShellKiller)
+echo        araciligiyla surekli sonlandirilir ancak registry kabugu degismez.
 echo.
 echo  [3] V3 - Setup-KioskMode-V3.ps1 (En Yeni / EN GUVENLI VE ONERILEN)
 echo      * Kisitlamalari sadece Kiosk kullanicisina (HKCU) uygular.
-echo      * Masaustu (explorer.exe) tamamen devre disi birakilir.
-echo      * Bilgisayar acildiginda kullanici masaustunu veya baslat menusunu
-echo        goremez, doğrudan siyah bir ekran uzerinde uygulamaniz calisir.
+echo      * EN TEMIZ AYAR: Hem Registry seviyesinde Ozel Kabuk ile explorer.exe
+echo        baslangici engellenir, hem de KioskShellKiller gorevi calisir.
+echo      * Acilista masaustu yuklenmeden dogrudan uygulamaniz calisir.
 echo.
-echo  ----------------------------------------------------------------------
-echo  CRITICAL: Sectiginiz script dosyasinin (.ps1) bu baslaticiyla (.bat)
-echo            ayni klasorde bulundugundan emin olun!
 echo  ----------------------------------------------------------------------
 echo.
 set "VerChoice="

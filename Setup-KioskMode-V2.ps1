@@ -385,7 +385,7 @@ Invoke-WithAutoFix -StepName "KioskApp gorevi olusturma" -Action {
         -Principal $appPrincipal `
         -Force | Out-Null
 
-    Write-OK "Gorev olusturuldu: KioskApp (AtLogOn + 30s tekrar watchdog)"
+    Write-OK "Gorev olusturuldu: KioskApp (AtLogOn + 1-dakika tekrar watchdog)"
 } -AutoFixes @{
     "already exists|access|denied|erisim" = {
         Unregister-ScheduledTask -TaskName "KioskApp" -Confirm:$false -ErrorAction SilentlyContinue
@@ -393,15 +393,60 @@ Invoke-WithAutoFix -StepName "KioskApp gorevi olusturma" -Action {
         $appAction  = New-ScheduledTaskAction -Execute $AppPath -Argument $AppArgs -WorkingDirectory $AppDir
         $appTrigger = New-ScheduledTaskTrigger -AtLogOn -User $KioskUser
         $tempTrigger = New-ScheduledTaskTrigger -Once -At "00:00" `
-            -RepetitionInterval (New-TimeSpan -Seconds 30) `
+            -RepetitionInterval (New-TimeSpan -Minutes 1) `
             -RepetitionDuration (New-TimeSpan -Days 9999)
         $appTrigger.Repetition = $tempTrigger.Repetition
         $appSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
-            -RestartCount 3 -RestartInterval (New-TimeSpan -Seconds 10) `
+            -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) `
             -ExecutionTimeLimit ([System.TimeSpan]::Zero)
         $appPrincipal = New-ScheduledTaskPrincipal -UserId $KioskUser -LogonType Interactive -RunLevel Limited
         Register-ScheduledTask -TaskName "KioskApp" -Action $appAction -Trigger $appTrigger `
             -Settings $appSettings -Principal $appPrincipal -Force | Out-Null
+    }
+}
+
+# KioskShellKiller Gorevi (Masaustunu / explorer.exe'yi surekli sonlandirir)
+Invoke-WithAutoFix -StepName "KioskShellKiller gorevi olusturma" -Action {
+    $skAction  = New-ScheduledTaskAction -Execute "taskkill.exe" -Argument "/F /IM explorer.exe"
+    $skTrigger = New-ScheduledTaskTrigger -AtLogOn -User $KioskUser
+
+    $tempTrigger = New-ScheduledTaskTrigger -Once -At "00:00" `
+        -RepetitionInterval (New-TimeSpan -Minutes 1) `
+        -RepetitionDuration (New-TimeSpan -Days 9999)
+    $skTrigger.Repetition = $tempTrigger.Repetition
+
+    $skSettings = New-ScheduledTaskSettingsSet `
+        -MultipleInstances IgnoreNew `
+        -RestartCount 3 `
+        -RestartInterval (New-TimeSpan -Minutes 1) `
+        -ExecutionTimeLimit ([System.TimeSpan]::Zero)
+    $skPrincipal = New-ScheduledTaskPrincipal -UserId $KioskUser -LogonType Interactive -RunLevel Limited
+
+    Register-ScheduledTask `
+        -TaskName "KioskShellKiller" `
+        -Action $skAction `
+        -Trigger $skTrigger `
+        -Settings $skSettings `
+        -Principal $skPrincipal `
+        -Force | Out-Null
+
+    Write-OK "Gorev olusturuldu: KioskShellKiller (AtLogOn + 1-dakika tekrar)"
+} -AutoFixes @{
+    "already exists|access|denied|erisim" = {
+        Unregister-ScheduledTask -TaskName "KioskShellKiller" -Confirm:$false -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 1
+        $skAction  = New-ScheduledTaskAction -Execute "taskkill.exe" -Argument "/F /IM explorer.exe"
+        $skTrigger = New-ScheduledTaskTrigger -AtLogOn -User $KioskUser
+        $tempTrigger = New-ScheduledTaskTrigger -Once -At "00:00" `
+            -RepetitionInterval (New-TimeSpan -Minutes 1) `
+            -RepetitionDuration (New-TimeSpan -Days 9999)
+        $skTrigger.Repetition = $tempTrigger.Repetition
+        $skSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
+            -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) `
+            -ExecutionTimeLimit ([System.TimeSpan]::Zero)
+        $skPrincipal = New-ScheduledTaskPrincipal -UserId $KioskUser -LogonType Interactive -RunLevel Limited
+        Register-ScheduledTask -TaskName "KioskShellKiller" -Action $skAction -Trigger $skTrigger `
+            -Settings $skSettings -Principal $skPrincipal -Force | Out-Null
     }
 }
 
@@ -709,6 +754,7 @@ Write-Host "Kiosk modu geri aliniyor..." -ForegroundColor Yellow
 
 # --- Gorev Zamanlayici gorevlerini sil ---
 Unregister-ScheduledTask -TaskName "KioskApp"         -Confirm:`$false -ErrorAction SilentlyContinue
+Unregister-ScheduledTask -TaskName "KioskShellKiller" -Confirm:`$false -ErrorAction SilentlyContinue
 Unregister-ScheduledTask -TaskName "KioskWatchdog"    -Confirm:`$false -ErrorAction SilentlyContinue
 Unregister-ScheduledTask -TaskName "KioskFirstLogon"  -Confirm:`$false -ErrorAction SilentlyContinue
 Write-Host "[OK] Gorev Zamanlayici gorevleri silindi" -ForegroundColor Green
