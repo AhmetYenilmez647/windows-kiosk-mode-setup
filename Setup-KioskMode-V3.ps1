@@ -366,7 +366,7 @@ Invoke-WithAutoFix -StepName "KioskApp gorevi olusturma" -Action {
     $appTrigger = New-ScheduledTaskTrigger -AtLogOn -User $KioskUser
 
     $tempTrigger = New-ScheduledTaskTrigger -Once -At "00:00" `
-        -RepetitionInterval (New-TimeSpan -Seconds 30) `
+        -RepetitionInterval (New-TimeSpan -Minutes 1) `
         -RepetitionDuration (New-TimeSpan -Days 9999)
     $appTrigger.Repetition = $tempTrigger.Repetition
 
@@ -393,7 +393,7 @@ Invoke-WithAutoFix -StepName "KioskApp gorevi olusturma" -Action {
         $appAction  = New-ScheduledTaskAction -Execute $AppPath -Argument $AppArgs -WorkingDirectory $AppDir
         $appTrigger = New-ScheduledTaskTrigger -AtLogOn -User $KioskUser
         $tempTrigger = New-ScheduledTaskTrigger -Once -At "00:00" `
-            -RepetitionInterval (New-TimeSpan -Seconds 30) `
+            -RepetitionInterval (New-TimeSpan -Minutes 1) `
             -RepetitionDuration (New-TimeSpan -Days 9999)
         $appTrigger.Repetition = $tempTrigger.Repetition
         $appSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
