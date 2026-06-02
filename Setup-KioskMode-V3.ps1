@@ -556,8 +556,7 @@ if (-not $SkipRestrictions) {
     "# Kendini temizle",
     "Remove-Item -Path `"$firstLogonPath`" -Force -ErrorAction SilentlyContinue",
     "Unregister-ScheduledTask -TaskName `"KioskFirstLogon`" -Confirm:`$false -ErrorAction SilentlyContinue"
-) -join "
-"
+) -join "`r`n"
 
         Set-Content -Path $firstLogonPath -Value $firstLogonContent -Encoding UTF8
         Write-OK "FirstLogon scripti olusturuldu: $firstLogonPath"
@@ -830,8 +829,7 @@ $undoContent = @(
     "}",
     "",
     "Write-Host `"`nGeri alma tamamlandi. Lutfen bilgisayari yeniden baslatin.`" -ForegroundColor Cyan"
-) -join "
-"
+) -join "`r`n"
 
 Set-Content -Path $undoScriptPath -Value $undoContent -Encoding UTF8
 Write-OK "Geri alma scripti olusturuldu: $undoScriptPath"
