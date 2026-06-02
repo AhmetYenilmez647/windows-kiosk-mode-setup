@@ -6,7 +6,7 @@
     Bu script; kiosk kullanicisi olusturma, uygulama otomatik baslatma,
     gorev cubugu gizleme, bildirim kapatma, kenar hareketleri engelleme,
     kullanici bazli kisitlama ve SRP kurulumu islemlerini otomatik yapar.
-    Tum kisitlamalar HKCU bazli uygulanir — admin hesabi etkilenmez.
+    Tum kisitlamalar HKCU bazli uygulanir -- admin hesabi etkilenmez.
 .PARAMETER AppPath
     Kiosk olarak calistirilacak uygulamanin tam yolu (zorunlu)
     Ornek: C:\Kiosk\uygulama.exe
@@ -47,9 +47,9 @@ param(
     [switch]$SkipRestrictions
 )
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # LOG SISTEMI + YARDIMCI FONKSIYONLAR
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 $script:LogPath = "C:\Kiosk\kiosk-setup.log"
 $script:HasManualAction = $false
@@ -213,9 +213,9 @@ function Apply-HKCURestrictions {
     }
 }
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # ON KONTROLLER
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 Write-Host ""
 Write-Host "==============================================" -ForegroundColor Magenta
@@ -256,13 +256,13 @@ if (-not (Test-Path $KioskDir)) {
     Write-OK "Kiosk klasoru olusturuldu: $KioskDir"
 }
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # ADIM 1: KIOSK KULLANICISI OLUSTUR
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 Write-Step "ADIM 1: Kiosk kullanicisi olusturuluyor..."
 
-# Scripti calıstıran kullanicinin kiosk kullanicisi olmadigini dogrula
+# Scripti calistiran kullanicinin kiosk kullanicisi olmadigini dogrula
 $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name.Split('\')[-1]
 if ($currentUser -eq $KioskUser) {
     Write-Fail "Bu script $KioskUser kullanicisiyla calistirilamaz!"
@@ -294,7 +294,7 @@ if ($existingUser) {
         if ($?) {
             Write-OK "Kiosk kullanicisi Administrators grubundan cikarildi (guvenlik onlemi)"
         } else {
-            Write-Warn "Kiosk kullanicisi Administrators grubundan cikarilamadi — manuel kontrol edin"
+            Write-Warn "Kiosk kullanicisi Administrators grubundan cikarilamadi -- manuel kontrol edin"
         }
     }
 } else {
@@ -336,9 +336,9 @@ if ($existingUser) {
     }
 }
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # ADIM 2: GOREV ZAMANLAYICI (Tek gorev, dahili watchdog)
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # Watchdog bat dosyasi KALDIRILDI (#2,#7,#8)
 # Yerine: AtLogOn tetikleyicisi + 30s tekrar = hem aninda baslatma hem watchdog
 
@@ -413,9 +413,9 @@ if (Test-Path $oldWatchdog) {
     Write-OK "Eski watchdog.bat temizlendi"
 }
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # ADIM 3: KAYIT DEFTERI AYARLARI (SISTEM GENELI)
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 Write-Step "ADIM 3: Sistem geneli registry ayarlari yapiliyor..."
 
@@ -426,10 +426,10 @@ Set-RegValue `
 
 Write-OK "Kenar kaydir hareketi devre disi birakildi"
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # ADIM 4: KIOSK KULLANICISI HKCU KISITLAMALARI
-# ─────────────────────────────────────────────
-# Tum kisitlamalar HKCU bazli — admin hesabi ETKiLENMEZ (#1,#3,#4)
+# ---------------------------------------------
+# Tum kisitlamalar HKCU bazli -- admin hesabi ETKiLENMEZ (#1,#3,#4)
 # Hive yuklenebilirse dogrudan yaz, yuklenemezse FirstLogon gorevi olustur
 
 if (-not $SkipRestrictions) {
@@ -460,7 +460,7 @@ if (-not $SkipRestrictions) {
             Write-Warn "Hive yuklenemedi (oturum acik olabilir): $regLoadResult"
         }
     } else {
-        Write-Warn "Kiosk profili henuz olusturulmamis — FirstLogon gorevi olusturulacak."
+        Write-Warn "Kiosk profili henuz olusturulmamis -- FirstLogon gorevi olusturulacak."
     }
 
     if ($hiveLoaded) {
@@ -483,9 +483,9 @@ if (-not $SkipRestrictions) {
         } else {
         Write-Warn "Hive yuklenemedi, FirstLogon gorevi olusturuluyor..."
 
-        # FirstLogon.ps1 — SYSTEM olarak calisir, ilk oturumda HKCU kisitlamalarini uygular
+        # FirstLogon.ps1 -- SYSTEM olarak calisir, ilk oturumda HKCU kisitlamalarini uygular
         # Kullanici oturum actiysa hive zaten HKU\<SID> altinda mount edilmis olur
-        # reg load KULLANILMAZ — dosya kilitli olur. Dogrudan HKU\<SID> uzerinden yazilir.
+        # reg load KULLANILMAZ -- dosya kilitli olur. Dogrudan HKU\<SID> uzerinden yazilir.
         $firstLogonPath = "$KioskDir\FirstLogon.ps1"
         $firstLogonContent = @(
     "",
@@ -597,10 +597,10 @@ if (-not $SkipRestrictions) {
         } # $kioskSID null guard sonu
     }
 
-    # ─────────────────────────────────────────────
+    # ---------------------------------------------
     # ADIM 5: SOFTWARE RESTRICTION POLICIES (SRP)
-    # ─────────────────────────────────────────────
-    # SRP islem duzeyinde engeller — DisallowRun'dan daha guclu (#5)
+    # ---------------------------------------------
+    # SRP islem duzeyinde engeller -- DisallowRun'dan daha guclu (#5)
     # PolicyScope=1 ile admin kullanicilari MUAF tutulur
 
     Write-Step "ADIM 5: Software Restriction Policies (SRP) kurulumu..."
@@ -656,9 +656,9 @@ if (-not $SkipRestrictions) {
     Write-Warn "ADIM 4-5: Kullanici kisitlamalari ve SRP atlaniyor (-SkipRestrictions)"
 }
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # ADIM 6: OTOMATIK OTURUM ACMA
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 if ($AutoLogon) {
     Write-Step "ADIM 6: Otomatik oturum acma yapilandiriliyor..."
@@ -689,9 +689,9 @@ if ($AutoLogon) {
     Write-Host "`n  [--] Otomatik oturum acma yapilandirilmadi (-AutoLogon parametresi verilmedi)" -ForegroundColor DarkGray
 }
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # ADIM 7: GERI ALMA SCRIPTI OLUSTUR
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 Write-Step "ADIM 7: Geri alma (Undo) scripti olusturuluyor..."
 
@@ -841,9 +841,9 @@ if ($undoCopyPath -ne $undoScriptPath) {
     Write-OK "Geri alma scripti kopyalandi: $undoCopyPath"
 }
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # OZET
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 Write-Host ""
 Write-Host "==============================================" -ForegroundColor Magenta
@@ -880,23 +880,23 @@ Write-Host ""
 Write-Host "  Geri almak icin: $undoScriptPath" -ForegroundColor DarkGray
 Write-Host ""
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 # LOG OZETI
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 Write-Log "========== KIOSK KURULUM TAMAMLANDI ==========" "INFO"
 
 if ($script:HasManualAction) {
-    Write-Host "  ╔══════════════════════════════════════════════════════╗" -ForegroundColor Red
-    Write-Host "  ║  DIKKAT: Bazi adimlar manuel mudahale gerektiriyor! ║" -ForegroundColor Red
-    Write-Host "  ╚══════════════════════════════════════════════════════╝" -ForegroundColor Red
+    Write-Host "  +======================================================+" -ForegroundColor Red
+    Write-Host "  |  DIKKAT: Bazi adimlar manuel mudahale gerektiriyor! |" -ForegroundColor Red
+    Write-Host "  +======================================================+" -ForegroundColor Red
     Write-Host ""
     Write-Host "  Log dosyasini inceleyin: $($script:LogPath)" -ForegroundColor Red
     Write-Host "  [MANUAL] etiketli satirlari arayin." -ForegroundColor Red
-    Write-Log "KURULUM TAMAMLANDI — MANUEL MUDAHALE GEREKEN ADIMLAR VAR" "WARN"
+    Write-Log "KURULUM TAMAMLANDI -- MANUEL MUDAHALE GEREKEN ADIMLAR VAR" "WARN"
 } else {
     Write-Host "  Tum adimlar basariyla tamamlandi." -ForegroundColor Green
-    Write-Log "KURULUM TAMAMLANDI — TUM ADIMLAR BASARILI" "OK"
+    Write-Log "KURULUM TAMAMLANDI -- TUM ADIMLAR BASARILI" "OK"
 }
 
 Write-Host "  Log dosyasi: $($script:LogPath)" -ForegroundColor DarkGray
