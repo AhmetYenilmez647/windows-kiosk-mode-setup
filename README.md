@@ -132,10 +132,10 @@ Boot → AutoLogon → Kiosk user session
 
 | File | Description |
 |------|-------------|
-| `Setup-KioskMode-V3.ps1` | **Current** — LF-safe kiosk setup script |
-| `Kiosk-Launcher.bat` | Interactive launcher for V3 (5 scenarios, input validation) |
-| `Setup-KioskMode-V2.ps1` | Previous version (here-string based, requires CRLF) |
-| `Setup-KioskMode.ps1` | V1 — Legacy (HKLM-based, affects all users) |
+| `Setup-KioskMode-V3.ps1` | **Current** — LF-safe kiosk setup script (Custom shell + KioskShellKiller task) |
+| `Kiosk-Launcher.bat` | Interactive launcher for V1, V2, and V3 with version selection |
+| `Setup-KioskMode-V2.ps1` | Previous version (HKCU restrictions + backported KioskShellKiller task) |
+| `Setup-KioskMode.ps1` | V1 — Legacy (HKLM-based, affects all users, unsupported) |
 | `.gitattributes` | Enforces CRLF line endings for .ps1/.bat files |
 
 ## Files Created During Setup
@@ -164,18 +164,19 @@ If any `[MANUAL]` entries exist, a red warning is displayed at the end of setup 
 ## Version History (V1 vs V2 vs V3)
 
 ### V3 (Current — `Setup-KioskMode-V3.ps1`)
+- **Shell Bypassing & Shell Killer:** Bypasses explorer shell loading completely via HKCU `Winlogon\Shell` registry configurations (`cmd.exe /c exit`). Also registers a secondary `KioskShellKiller` scheduled task watchdog to kill explorer.exe every 1 minute.
 - **Line Ending Robustness:** Replaced PowerShell here-strings (`@"..."@`) with string arrays (`@(...) -join "`r`n"`). This completely eliminates `TerminatorExpectedAtEndOfString` errors when users download the script via GitHub's "Raw" button (which defaults to Unix LF line endings) or clone on systems with `core.autocrlf=false`.
-- **Interactive Launcher:** Added `Kiosk-Launcher.bat` — a guided batch launcher with 5 deployment scenarios, input validation (full path check, username space check, V3.ps1 existence check), and proper PowerShell parameter passing.
+- **Interactive Launcher:** Updated `Kiosk-Launcher.bat` to support version selection (V1, V2, V3) with detailed guides, input trimming (quotes/spaces), and local file checks.
 
 ### V2 (`Setup-KioskMode-V2.ps1`)
 - **Safe Admin Restrictions (HKCU):** Moved all restrictions from `HKLM` to `HKCU`. Now restrictions *only* affect the Kiosk user. Your admin accounts are completely untouched.
+- **KioskShellKiller Watchdog:** Backported the same 1-minute `KioskShellKiller` scheduled task watchdog from V3 to kill explorer.exe at logon.
 - **Log System:** Added comprehensive logging (`kiosk-setup.log`).
 - **Software Restriction Policies (SRP):** Added process-level blocking with `PolicyScope=1` (Admins exempt).
-- **Internal Watchdog:** Removed the external `watchdog.bat` file. The watchdog is now an internal Task Scheduler loop (repeats every 30 seconds).
-- **Auto-Fixing:** Added self-healing steps if commands fail (e.g. recreating already existing tasks/users).
+- **Internal Watchdog:** Removed the external `watchdog.bat` file. The watchdog is now an internal Task Scheduler loop (repeats every 1 minute to avoid XML errors).
 
 ### V1 (`Setup-KioskMode.ps1`)
-- *Legacy script:* Used `HKLM` (affected all users), had external batch watchdogs, and lacked detailed logging. V2's undo script cleans up V1 remnants automatically.
+- *Legacy script (Deprecated / Unsupported):* Used HKLM (affected all users), had external batch watchdogs, and lacked detailed logging. V2's undo script cleans up V1 remnants automatically.
 
 ## License
 
