@@ -373,7 +373,7 @@ Invoke-WithAutoFix -StepName "KioskApp gorevi olusturma" -Action {
     $appSettings = New-ScheduledTaskSettingsSet `
         -MultipleInstances IgnoreNew `
         -RestartCount 3 `
-        -RestartInterval (New-TimeSpan -Seconds 10) `
+        -RestartInterval (New-TimeSpan -Minutes 1) `
         -ExecutionTimeLimit ([System.TimeSpan]::Zero)
     $appPrincipal = New-ScheduledTaskPrincipal -UserId $KioskUser -LogonType Interactive -RunLevel Limited
 
@@ -397,7 +397,7 @@ Invoke-WithAutoFix -StepName "KioskApp gorevi olusturma" -Action {
             -RepetitionDuration (New-TimeSpan -Days 9999)
         $appTrigger.Repetition = $tempTrigger.Repetition
         $appSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
-            -RestartCount 3 -RestartInterval (New-TimeSpan -Seconds 10) `
+            -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) `
             -ExecutionTimeLimit ([System.TimeSpan]::Zero)
         $appPrincipal = New-ScheduledTaskPrincipal -UserId $KioskUser -LogonType Interactive -RunLevel Limited
         Register-ScheduledTask -TaskName "KioskApp" -Action $appAction -Trigger $appTrigger `
