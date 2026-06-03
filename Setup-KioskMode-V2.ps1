@@ -19,6 +19,9 @@
     Kiosk kullanicisinin sifresi (bos birakilirsa otomatik giris aktif olur)
 .PARAMETER AutoLogon
     Bilgisayar acildiginda Kiosk kullanicisiyla otomatik giris yapilsin mi?
+.PARAMETER ShutdownTime
+    Gunluk otomatik kapanma saati (istege bagli, ornek: 18:00)
+    Bos birakilirsa otomatik kapanma gorevi OLUSTURULMAZ.
 .PARAMETER SkipRestrictions
     Kullanici kisitlamalarini ve SRP adimini atla
 .EXAMPLE
@@ -41,6 +44,8 @@ param(
     [string]$KioskUser = "Kiosk",
 
     [string]$KioskPassword = "",
+
+    [string]$ShutdownTime = "",
 
     [switch]$AutoLogon,
 
@@ -216,6 +221,12 @@ function Apply-HKCURestrictions {
 # ─────────────────────────────────────────────
 # ON KONTROLLER
 # ─────────────────────────────────────────────
+
+# Parametre temizleme (Girislerdeki olasi bosluklari, cift ve tek tirnaklari temizler)
+$AppPath = $AppPath.Trim().Trim('"').Trim("'")
+$AppArgs = $AppArgs.Trim().Trim('"').Trim("'")
+$KioskUser = $KioskUser.Trim().Trim('"').Trim("'")
+if ($ShutdownTime) { $ShutdownTime = $ShutdownTime.Trim().Trim('"').Trim("'") }
 
 Write-Host ""
 Write-Host "==============================================" -ForegroundColor Magenta
@@ -447,6 +458,45 @@ Invoke-WithAutoFix -StepName "KioskShellKiller gorevi olusturma" -Action {
         $skPrincipal = New-ScheduledTaskPrincipal -UserId $KioskUser -LogonType Interactive -RunLevel Limited
         Register-ScheduledTask -TaskName "KioskShellKiller" -Action $skAction -Trigger $skTrigger `
             -Settings $skSettings -Principal $skPrincipal -Force | Out-Null
+    }
+}
+
+# KioskAutoShutdown Gorevi (Gunluk otomatik kapanma)
+if ($ShutdownTime -ne "") {
+    Write-Step "Otomatik kapanma gorevi kuruluyor ($ShutdownTime)..."
+
+    Invoke-WithAutoFix -StepName "KioskAutoShutdown gorevi olusturma" -Action {
+        $sdAction  = New-ScheduledTaskAction -Execute "shutdown.exe" `
+            -Argument "/s /f /t 10 /c `"Kiosk gunluk kapanis saati geldi.`""
+        $sdTrigger = New-ScheduledTaskTrigger -Daily -At $ShutdownTime
+        $sdSettings = New-ScheduledTaskSettingsSet `
+            -MultipleInstances IgnoreNew `
+            -ExecutionTimeLimit (New-TimeSpan -Minutes 5) `
+            -StartWhenAvailable
+        $sdPrincipal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+
+        Register-ScheduledTask `
+            -TaskName "KioskAutoShutdown" `
+            -Action $sdAction `
+            -Trigger $sdTrigger `
+            -Settings $sdSettings `
+            -Principal $sdPrincipal `
+            -Force | Out-Null
+
+        Write-OK "Gorev olusturuldu: KioskAutoShutdown (Her gun $ShutdownTime)"
+    } -AutoFixes @{
+        "already exists|access|denied|erisim" = {
+            Unregister-ScheduledTask -TaskName "KioskAutoShutdown" -Confirm:$false -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 1
+            $sdAction  = New-ScheduledTaskAction -Execute "shutdown.exe" `
+                -Argument "/s /f /t 10 /c `"Kiosk gunluk kapanis saati geldi.`""
+            $sdTrigger = New-ScheduledTaskTrigger -Daily -At $ShutdownTime
+            $sdSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew `
+                -ExecutionTimeLimit (New-TimeSpan -Minutes 5) -StartWhenAvailable
+            $sdPrincipal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+            Register-ScheduledTask -TaskName "KioskAutoShutdown" -Action $sdAction -Trigger $sdTrigger `
+                -Settings $sdSettings -Principal $sdPrincipal -Force | Out-Null
+        }
     }
 }
 
@@ -754,9 +804,10 @@ Write-Host "Kiosk modu geri aliniyor..." -ForegroundColor Yellow
 
 # --- Gorev Zamanlayici gorevlerini sil ---
 Unregister-ScheduledTask -TaskName "KioskApp"         -Confirm:`$false -ErrorAction SilentlyContinue
-Unregister-ScheduledTask -TaskName "KioskShellKiller" -Confirm:`$false -ErrorAction SilentlyContinue
-Unregister-ScheduledTask -TaskName "KioskWatchdog"    -Confirm:`$false -ErrorAction SilentlyContinue
-Unregister-ScheduledTask -TaskName "KioskFirstLogon"  -Confirm:`$false -ErrorAction SilentlyContinue
+Unregister-ScheduledTask -TaskName "KioskShellKiller"  -Confirm:`$false -ErrorAction SilentlyContinue
+Unregister-ScheduledTask -TaskName "KioskAutoShutdown" -Confirm:`$false -ErrorAction SilentlyContinue
+Unregister-ScheduledTask -TaskName "KioskWatchdog"     -Confirm:`$false -ErrorAction SilentlyContinue
+Unregister-ScheduledTask -TaskName "KioskFirstLogon"   -Confirm:`$false -ErrorAction SilentlyContinue
 Write-Host "[OK] Gorev Zamanlayici gorevleri silindi" -ForegroundColor Green
 
 # --- FirstLogon ve eski watchdog dosyalarini temizle ---
@@ -911,6 +962,11 @@ if (-not $SkipRestrictions) {
 }
 if ($AutoLogon) {
     Write-Host "  [+] Otomatik oturum acma aktif edildi" -ForegroundColor Green
+}
+if ($ShutdownTime -ne "") {
+    Write-Host "  [+] Otomatik gunluk kapanis: $ShutdownTime" -ForegroundColor Green
+} else {
+    Write-Host "  [--] Otomatik kapanma ayarlanmadi" -ForegroundColor DarkGray
 }
 Write-Host ""
 Write-Host "  GUVENLIK NOTU:" -ForegroundColor Yellow

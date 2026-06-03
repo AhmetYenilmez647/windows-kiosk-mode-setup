@@ -7,6 +7,7 @@ Automated PowerShell script to turn any Windows 10/11 PC into a secure single-ap
 ## Features
 
 - **Single-app lockdown** — Launches your app at logon with a 30-second watchdog (auto-restart if closed)
+- **Auto-shutdown schedule** — Optional daily scheduled shutdown time
 - **User isolation** — All restrictions apply only to the kiosk user; admin accounts are never affected
 - **Software Restriction Policies (SRP)** — Process-level blocking of cmd, PowerShell, regedit, Task Manager, mmc, wscript, cscript, mshta (admin exempt via `PolicyScope=1`)
 - **HKCU-based restrictions** — DisallowRun, disable Task Manager, hide Run dialog, block Control Panel/Settings, disable Notification Center
@@ -64,6 +65,9 @@ Open PowerShell **as Administrator** and run:
 # Basic kiosk (passwordless, auto-logon)
 & ".\Setup-KioskMode-V3.ps1" -AppPath "D:\Kiosk\myapp.exe" -AutoLogon
 
+# Daily auto-shutdown at 18:00
+& ".\Setup-KioskMode-V3.ps1" -AppPath "D:\Kiosk\myapp.exe" -ShutdownTime "18:00" -AutoLogon
+
 # With app arguments
 & ".\Setup-KioskMode-V3.ps1" -AppPath "C:\Kiosk\browser.exe" -AppArgs "--kiosk --fullscreen" -AutoLogon
 
@@ -106,6 +110,7 @@ If the kiosk user is locked and you need to regain control:
 | `-KioskUser` | No | `Kiosk` | Name of the kiosk user account to create |
 | `-KioskPassword` | No | `""` | Password for the kiosk user (empty = passwordless) |
 | `-AutoLogon` | No | `$false` | Enable automatic login at boot |
+| `-ShutdownTime` | No | `""` | Daily automatic shutdown time (e.g. "18:00") |
 | `-SkipRestrictions` | No | `$false` | Skip HKCU restrictions and SRP setup |
 
 ## How It Works
@@ -118,6 +123,7 @@ Boot → AutoLogon → Kiosk user session
   → FirstLogon task (SYSTEM): applies HKCU restrictions via HKU\<SID>
     → Kills explorer.exe (no shell)
     → Self-deletes after success
+  → KioskAutoShutdown task (SYSTEM): runs shutdown.exe at specified time 
 ```
 
 ### Safety Checks

@@ -29,10 +29,10 @@ echo  sizin icin dogru parametrelerle otomatik olarak baslatir.
 echo.
 
 rem ====================================================
-rem [0/4] SURUM SECIMI
+rem [0/5] SURUM SECIMI
 rem ====================================================
 echo  ----------------------------------------------------------------------
-echo  [0/4] SCRIPT SURUMU SECIN
+echo  [0/5] SCRIPT SURUMU SECIN
 echo  ----------------------------------------------------------------------
 echo.
 echo  DIKKAT: Sectiginiz script dosyasinin indirildiginden ve bu baslaticiyla
@@ -98,10 +98,10 @@ echo  [OK] Secilen Surum: !VER_NAME!
 echo.
 
 rem ====================================================
-rem [1/4] UYGULAMA BILGILERI
+rem [1/5] UYGULAMA BILGILERI
 rem ====================================================
 echo  ----------------------------------------------------------------------
-echo  [1/4] UYGULAMA BILGILERI
+echo  [1/5] UYGULAMA BILGILERI
 echo  ----------------------------------------------------------------------
 echo.
 set /p "AppPath=  Uygulamanin TAM YOLUNU girin (ornek: C:\Kiosk\app.exe): "
@@ -138,10 +138,10 @@ set /p "AppArgs=  Argumanlari girin [bos birakilabilir]: "
 echo.
 
 rem ====================================================
-rem [2/4] KIOSK KULLANICI ADI
+rem [2/5] KIOSK KULLANICI ADI
 rem ====================================================
 echo  ----------------------------------------------------------------------
-echo  [2/4] KIOSK KULLANICI ADI
+echo  [2/5] KIOSK KULLANICI ADI
 echo  ----------------------------------------------------------------------
 echo.
 echo  Birden fazla kiosk kurulumu yapacaksaniz farkli isimler
@@ -161,10 +161,10 @@ if !errorLevel! equ 0 (
 echo.
 
 rem ====================================================
-rem [3/4] SENARYO SECIMI
+rem [3/5] SENARYO SECIMI
 rem ====================================================
 echo  ----------------------------------------------------------------------
-echo  [3/4] KURULUM SENARYOSU SECIN
+echo  [3/5] KURULUM SENARYOSU SECIN
 echo  ----------------------------------------------------------------------
 echo.
 echo  [1] Sifresiz Otomatik Giris (Onerilen)
@@ -240,11 +240,29 @@ if "!USE_PASSWORD!"=="1" (
 )
 
 rem ====================================================
-rem [4/4] OZET VE ONAY
+rem [4/5] OTOMATIK KAPANMA SAATI
+rem ====================================================
+echo  ----------------------------------------------------------------------
+echo  [4/5] GUNLUK OTOMATIK KAPANMA SAATI
+echo  ----------------------------------------------------------------------
+echo.
+echo  Bilgisayarin her gun belirli bir saatte otomatik kapanmasini
+echo  istiyorsaniz kapanma saatini girin. Bu ozellik istemiyorsaniz
+echo  bos birakin.
+echo.
+echo  Ornek: 18:00  (aksam 6'da kapanir)
+echo         23:30  (gece 11:30'da kapanir)
+echo.
+set "ShutdownTime="
+set /p "ShutdownTime=  Kapanma saati [bos=kapanma yok]: "
+echo.
+
+rem ====================================================
+rem [5/5] OZET VE ONAY
 rem ====================================================
 echo.
 echo  ================================================================------
-echo  [4/4] KURULUM OZETI
+echo  [5/5] KURULUM OZETI
 echo  ================================================================------
 echo.
 echo   Script Dosyasi: !SCRIPT_FILE!
@@ -253,6 +271,7 @@ echo   Uygulama Yolu : !AppPath!
 if not "!AppArgs!"=="" echo   Argumanlar    : !AppArgs!
 echo   Kullanici Adi : !KioskUser!
 echo   Senaryo       : !ScenarioName!
+if not "!ShutdownTime!"=="" ( echo   Kapanma Saati : !ShutdownTime! ) else ( echo   Kapanma Saati : Ayarlanmadi )
 echo.
 echo  ================================================================------
 echo.
@@ -285,6 +304,13 @@ if "!USE_PASSWORD!"=="1" (
 
 if "!USE_AUTOLOGON!"=="1" (
     set "PS_CMD=!PS_CMD! -AutoLogon"
+)
+
+rem ShutdownTime parametresi (V1 desteklemez, sadece V2/V3)
+if not "!ShutdownTime!"=="" (
+    if not "!VerChoice!"=="1" (
+        set "PS_CMD=!PS_CMD! -ShutdownTime \"!ShutdownTime!\""
+    )
 )
 
 rem V1 scripti -SkipGroupPolicy kullanir, V2/V3 -SkipRestrictions kullanir
